@@ -2,6 +2,8 @@ package one.digitalinnovation.gof.service.impl;
 
 import java.util.Optional;
 
+import one.digitalinnovation.gof.exceptions.CampoNuloException;
+import one.digitalinnovation.gof.exceptions.ClienteNaoEncontradoException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -42,17 +44,23 @@ public class ClienteServiceImpl implements ClienteService {
 	@Override
 	public Cliente buscarPorId(Long id) {
 		// Buscar Cliente por ID.
+		verificaIdNaoExistente(id);
+
 		Optional<Cliente> cliente = clienteRepository.findById(id);
 		return cliente.get();
 	}
 
 	@Override
 	public void inserir(Cliente cliente) {
+		verificaCamposNulos(cliente); //método que verifica se temos campos nulos, caso teja, jogaremos a exception criada CampoNuloException
+
 		salvarClienteComCep(cliente);
 	}
 
 	@Override
 	public void atualizar(Long id, Cliente cliente) {
+		verificaCamposNulos(cliente);
+
 		// Buscar Cliente por ID, caso exista:
 		Optional<Cliente> clienteBd = clienteRepository.findById(id);
 		if (clienteBd.isPresent()) {
@@ -63,6 +71,8 @@ public class ClienteServiceImpl implements ClienteService {
 	@Override
 	public void deletar(Long id) {
 		// Deletar Cliente por ID.
+		verificaIdNaoExistente(id);
+
 		clienteRepository.deleteById(id);
 	}
 
@@ -78,6 +88,22 @@ public class ClienteServiceImpl implements ClienteService {
 		cliente.setEndereco(endereco);
 		// Inserir Cliente, vinculando o Endereco (novo ou existente).
 		clienteRepository.save(cliente);
+	}
+
+	private void verificaCamposNulos(Cliente cliente){
+		if(cliente.getNome() == null){
+			throw new CampoNuloException("ERRO: O campo nome não foi informado.");
+		}
+
+		if(cliente.getEndereco() == null){
+			System.out.println("ERRO: Um ou mais atributos do campo endereço não foi informado.");
+		}
+	}
+
+	private void verificaIdNaoExistente(Long id){
+		if(!clienteRepository.existsById(id)){
+			throw new ClienteNaoEncontradoException("ERRO: O cliente com o id " +id+" não foi encontrado.");
+		}
 	}
 
 }
